@@ -8,7 +8,7 @@ import ValidationMixin from 'ember-paper/mixins/validation-mixin';
 import ChildMixin from 'ember-paper/mixins/child-mixin';
 import FocusableMixin from 'ember-paper/mixins/focusable-mixin';
 
-const { computed } = Ember;
+const { computed, testing } = Ember;
 
 function concatWithProperty(strings, property) {
   if (property) {
@@ -56,6 +56,31 @@ export default PowerSelect.extend(ValidationMixin, ChildMixin, FocusableMixin, {
     return concatWithProperty(classes, this.get('triggerClass'));
   }),
   actions: {
+    choose(selected, e) {
+      // _super is not called intentionally; PowerSelect requires the mouse to move vertically
+      // for at least 2 pixels, which does not work well in material design, where the first option
+      // is always overlapping the select.
+      // choose is fired on the 'mouseup' event that actually accompanies the 'mousedown' event
+      // that is captured in 'this.openingEvent'. So we need to skip the first 'mouseup' we encounter
+      // if the openingEvent was indeed a 'mousedown'
+      if (testing) {
+        // a problem in in 'ember-testing/helpers/click' prevents this hack from working, so revert to 'default'
+        // behaviour when testing
+        return this._super(...arguments);
+      }
+      if (!this.openingFinished && this.openingEvent.type === 'mousedown' && e && e.type === 'mouseup') {
+        this.openingFinished = e;
+        return;
+      }
+      this.openingFinished = undefined;
+      // this is a copy of the rest of the code in PowerSelect.actions.choose
+      let publicAPI = this.get('publicAPI');
+      publicAPI.actions.select(this.get('buildSelection')(selected, publicAPI), e);
+      if (this.get('closeOnSelect')) {
+        publicAPI.actions.close(e);
+        return false;
+      }
+    },
     onClose() {
       this._super(...arguments);
       this.set('isTouched', true);
