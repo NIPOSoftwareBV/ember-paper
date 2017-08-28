@@ -57,29 +57,17 @@ export default PowerSelect.extend(ValidationMixin, ChildMixin, FocusableMixin, {
   }),
   actions: {
     choose(selected, e) {
-      // _super is not called intentionally; PowerSelect requires the mouse to move vertically
-      // for at least 2 pixels, which does not work well in material design, where the first option
-      // is always overlapping the select.
-      // choose is fired on the 'mouseup' event that actually accompanies the 'mousedown' event
-      // that is captured in 'this.openingEvent'. So we need to skip the first 'mouseup' we encounter
-      // if the openingEvent was indeed a 'mousedown'
-      if (testing) {
-        // a problem in in 'ember-testing/helpers/click' prevents this hack from working, so revert to 'default'
-        // behaviour when testing
-        return this._super(...arguments);
+      if (e && e.timeStamp) {
+        if (this.openingEvent && this.openingEvent.timeStamp) {
+          if (Math.abs(this.openingEvent.timeStamp - e.timeStamp) > 150) {
+            // @HACK: e-p-s checks that the mouse has moved 2 pixels, so we
+            // set the original event to null if more than 150ms have passed.
+            this.openingEvent = null;
+          }
+        }
       }
-      if (!this.openingFinished && this.openingEvent.type === 'mousedown' && e && e.type === 'mouseup') {
-        this.openingFinished = e;
-        return;
-      }
-      this.openingFinished = undefined;
-      // this is a copy of the rest of the code in PowerSelect.actions.choose
-      let publicAPI = this.get('publicAPI');
-      publicAPI.actions.select(this.get('buildSelection')(selected, publicAPI), e);
-      if (this.get('closeOnSelect')) {
-        publicAPI.actions.close(e);
-        return false;
-      }
+
+      this._super(...arguments);
     },
     onClose() {
       this._super(...arguments);
