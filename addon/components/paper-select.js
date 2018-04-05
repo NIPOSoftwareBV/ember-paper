@@ -8,7 +8,7 @@ import ValidationMixin from 'ember-paper/mixins/validation-mixin';
 import ChildMixin from 'ember-paper/mixins/child-mixin';
 import FocusableMixin from 'ember-paper/mixins/focusable-mixin';
 
-const { computed, testing } = Ember;
+const { computed } = Ember;
 
 function concatWithProperty(strings, property) {
   if (property) {
