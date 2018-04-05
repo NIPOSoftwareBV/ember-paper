@@ -1,9 +1,11 @@
 import Ember from 'ember';
 import layout from '../templates/components/paper-tooltip';
 import $ from 'jquery';
+import getParent from 'ember-paper/utils/get-parent';
 const { Component, computed, testing, run, String: { htmlSafe } } = Ember;
 
 export default Component.extend({
+  tagName: '',
   layout,
 
   position: 'bottom',
@@ -45,7 +47,7 @@ export default Component.extend({
     if (attachTo) {
       return $(attachTo).get(0);
     } else {
-      return this.element.parentNode;
+      return getParent(this);
     }
   }),
 
@@ -54,16 +56,18 @@ export default Component.extend({
     let anchorElement = this.get('anchorElement');
 
     let leaveHandler = () => {
-      this.set('hideTooltip', true);
-      run.later(() => {
-        if (!this.isDestroyed) {
-          this.set('renderTooltip', false);
-        }
-      }, 150);
+      if (!this.isDestroyed) {
+        this.set('hideTooltip', true);
+        run.later(() => {
+          if (!this.isDestroyed) {
+            this.set('renderTooltip', false);
+          }
+        }, 150);
 
-      anchorElement.addEventListener('blur', leaveHandler);
-      anchorElement.addEventListener('touchcancel', leaveHandler);
-      anchorElement.addEventListener('mouseleave', leaveHandler);
+        anchorElement.addEventListener('blur', leaveHandler);
+        anchorElement.addEventListener('touchcancel', leaveHandler);
+        anchorElement.addEventListener('mouseleave', leaveHandler);
+      }
     };
 
     let enterEventHandler = () => {
