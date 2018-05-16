@@ -1,10 +1,17 @@
 /**
  * @module ember-paper
  */
-import Ember from 'ember';
+import { inject as service } from '@ember/service';
+
+import { or } from '@ember/object/computed';
+import $ from 'jquery';
+import Component from '@ember/component';
+import { computed } from '@ember/object';
+import { run } from '@ember/runloop';
+import { guidFor } from '@ember/object/internals';
+import { getOwner } from '@ember/application';
 import layout from '../templates/components/paper-toast';
 
-const { $, Component, computed, inject, testing, run, guidFor } = Ember;
 /**
  * @class PaperToast
  * @extends Ember.Component
@@ -31,13 +38,15 @@ export default Component.extend({
 
   // Calculate a default that is always valid for the parent of the backdrop.
   wormholeSelector: '#paper-toast-fab-wormhole',
-  defaultedParent: computed.or('parent', 'wormholeSelector'),
+  defaultedParent: or('parent', 'wormholeSelector'),
 
   // Calculate the id of the wormhole destination, setting it if need be. The
   // id is that of the 'parent', if provided, or 'paper-wormhole' if not.
   destinationId: computed('defaultedParent', function() {
-    if (testing && !this.get('parent')) {
-      return 'ember-testing';
+    let config = getOwner(this).resolveRegistration('config:environment');
+
+    if (config.environment === 'test' && !this.get('parent')) {
+      return '#ember-testing';
     }
     let parent = this.get('defaultedParent');
     let $parent = $(parent);
@@ -45,18 +54,23 @@ export default Component.extend({
     // exist yet. This only happens during integration tests or if entire application
     // route is a dialog.
     if ($parent.length === 0 && parent.charAt(0) === '#') {
-      return parent.substring(1);
+      return `#${parent.substring(1)}`;
     } else {
       let id = $parent.attr('id');
       if (!id) {
         id = `${this.uniqueId}-parent`;
         $parent.get(0).id = id;
       }
-      return id;
+      return `#${id}`;
     }
   }),
 
-  constants: inject.service(),
+  // Find the element referenced by destinationId
+  destinationEl: computed('destinationId', function() {
+    return document.querySelector(this.get('destinationId'));
+  }),
+
+  constants: service(),
 
   _destroyMessage() {
     if (!this.isDestroyed) {
@@ -71,7 +85,7 @@ export default Component.extend({
 
   willInsertElement() {
     this._super(...arguments);
-    $(`#${this.get('destinationId')}`).addClass('md-toast-animating');
+    $(this.get('destinationId')).addClass('md-toast-animating');
   },
 
   didInsertElement() {
@@ -91,7 +105,7 @@ export default Component.extend({
     }
 
     let y = this.get('top') ? 'top' : 'bottom';
-    $(`#${this.get('destinationId')}`).addClass(`md-toast-open-${y}`);
+    $(this.get('destinationId')).addClass(`md-toast-open-${y}`);
   },
 
   willDestroyElement() {
@@ -101,7 +115,7 @@ export default Component.extend({
     }
 
     let y = this.get('top') ? 'top' : 'bottom';
-    $(`#${this.get('destinationId')}`).removeClass(`md-toast-open-${y} md-toast-animating`);
+    $(this.get('destinationId')).removeClass(`md-toast-open-${y} md-toast-animating`);
   },
 
   swipeAction()  {

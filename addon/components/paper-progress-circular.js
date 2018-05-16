@@ -1,13 +1,16 @@
 /**
  * @module ember-paper
  */
-import Ember from 'ember';
+import { equal } from '@ember/object/computed';
+
+import Component from '@ember/component';
+import { computed } from '@ember/object';
+import { isPresent } from '@ember/utils';
+import { htmlSafe } from '@ember/string';
 import layout from '../templates/components/paper-progress-circular';
 import ColorMixin from 'ember-paper/mixins/color-mixin';
 import clamp from 'ember-paper/utils/clamp';
 import { rAF, cAF } from 'ember-css-transitions/mixins/transition-mixin';
-
-const { Component, computed, isPresent, String: { htmlSafe } } = Ember;
 
 const MODE_DETERMINATE = 'determinate';
 const MODE_INDETERMINATE = 'indeterminate';
@@ -56,7 +59,7 @@ export default Component.extend(ColorMixin, {
     return mode === MODE_DETERMINATE || mode === MODE_INDETERMINATE ? `md-mode-${mode}` : 'ng-hide';
   }),
 
-  isIndeterminate: computed.equal('mode', MODE_INDETERMINATE),
+  isIndeterminate: equal('mode', MODE_INDETERMINATE).readOnly(),
 
   strokeWidth: computed('strokeRatio', 'diameter', function() {
     return this.get('strokeRatio') * this.get('diameter');
@@ -110,9 +113,13 @@ export default Component.extend(ColorMixin, {
     let newValue = clamp(this.get('value'), 0, 100);
     let newDisabled = this.get('disabled');
 
-    if (this.oldValue !== newValue && this.get('mode') === MODE_DETERMINATE) {
       // value changed
       this.startDeterminateAnimation(this.oldValue, newValue);
+    let diameterChanged = this.oldDiameter !== this.get('diameter');
+    let strokeRatioChanged = this.oldStrokeRatio !== this.get('strokeRatio');
+    let isDeterminateMode = this.get('mode') === MODE_DETERMINATE;
+    if ((this.oldValue !== newValue || diameterChanged || strokeRatioChanged) && isDeterminateMode) {
+      this.startDeterminateAnimation(this.oldValue || 0, newValue);
       this.oldValue = newValue;
     }
 
@@ -125,6 +132,9 @@ export default Component.extend(ColorMixin, {
       }
       this.oldValue = newValue;
     }
+
+    this.oldDiameter = this.get('diameter');
+    this.oldStrokeRatio = this.get('strokeRatio');
   },
 
   willDestroyElement() {
@@ -164,8 +174,12 @@ export default Component.extend(ColorMixin, {
 
     let renderFrame = (value, diameter, strokeWidth, dashLimit) => {
       if (!this.isDestroyed && !this.isDestroying) {
-        this.$('path').attr('stroke-dashoffset', this.getDashLength(diameter, strokeWidth, value, dashLimit));
-        this.$('path').attr('transform', `rotate(${rotation} ${diameter / 2} ${diameter / 2})`);
+        let $path = this.$('path');
+        if (!$path) {
+          return;
+        }
+        $path.attr('stroke-dashoffset', this.getDashLength(diameter, strokeWidth, value, dashLimit));
+        $path.attr('transform', `rotate(${rotation} ${diameter / 2} ${diameter / 2})`);
       }
     };
 
@@ -175,7 +189,6 @@ export default Component.extend(ColorMixin, {
     } else {
       let animation = () => {
         let currentTime = clamp(now() - startTime, 0, animationDuration);
-
         renderFrame(ease(currentTime, animateFrom, changeInValue, animationDuration), diameter, strokeWidth, dashLimit);
 
         // Do not allow overlapping animations

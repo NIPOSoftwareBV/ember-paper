@@ -1,11 +1,13 @@
 /**
  * @module ember-paper
  */
-import Ember from 'ember';
+import $ from 'jquery';
+
+import { computed } from '@ember/object';
+import { htmlSafe } from '@ember/string';
 import layout from '../templates/components/paper-menu-content';
 import ContentComponent from 'ember-basic-dropdown/components/basic-dropdown/content';
 import { nextTick } from 'ember-css-transitions/mixins/transition-mixin';
-const { $, computed, String: { htmlSafe } } = Ember;
 const MutObserver = window.MutationObserver || window.WebKitMutationObserver;
 
 function waitForAnimations(element, callback) {
@@ -58,6 +60,12 @@ export default ContentComponent.extend({
     if (style.length > 0) {
       return htmlSafe(style);
     }
+  }),
+
+  // returns `destinationElement` for ember-basic-dropdown >= 1.0.0
+  // finds destination by `to` for ember-basic-dropdown < 1.0.0
+  destinationEl: computed('destinationElement', 'to', function() {
+    return this.get('destinationElement') || document.getElementById(this.get('to'));
   }),
 
   startObservingDomMutations() {
