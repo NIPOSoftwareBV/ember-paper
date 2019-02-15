@@ -23,6 +23,7 @@
     {{#paper-option parentComponent=menuParent class="ember-power-select-option"
       aria-selected=(ember-power-select-is-selected opt select.selected)
       selected=(if (ember-power-select-is-selected opt select.selected) "selected" undefined)
+      disabled=(ember-power-select-true-string-if-present opt.disabled)
       aria-disabled=(ember-power-select-true-string-if-present opt.disabled)
       aria-current=(eq opt select.highlighted)
       data-option-index=(concat groupIndex index)
