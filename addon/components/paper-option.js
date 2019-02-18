@@ -15,7 +15,7 @@ import RippleMixin from '../mixins/ripple-mixin';
 export default PaperMenuItem.extend(RippleMixin, {
   layout,
   tagName: 'md-option',
-  attributeBindings: ['aria-selected', 'aria-disabled', 'aria-current', 'data-option-index', 'role', 'selected', 'tabindex'],
+  attributeBindings: ['aria-selected', 'aria-disabled', 'aria-current', 'data-option-index', 'disabled', 'role', 'selected', 'tabindex'],
   rippleContainerSelector: null,
   tabindex: '0',
   fitRipple: readOnly('isIconButton'),
