@@ -82,6 +82,9 @@ class PaperSelectEbdContent extends Component {
     if (!parentElement) {
       parentElement = document.getElementById("ember-basic-dropdown-wormhole");
     }
+    if (!parentElement) {
+      parentElement = document.getElementById("ember-testing");
+    }
 
     let clone = dropdownElement.cloneNode(true);
     clone.id = `${clone.id}--clone`;
